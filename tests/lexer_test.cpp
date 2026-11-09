@@ -1,0 +1,100 @@
+#include "lexer.hpp"
+
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
+
+using namespace std;
+
+int main() {
+    string source ="$capture first_name in text;\n // This comment should be skipped\n let score = 72.5;\n show score; \n let greeting = \"Hi\";\n when (score >=70 && true) {show greeting; }";
+
+    Lexer lexer(source);
+    vector<Token> tokens = lexer.scanTokens();
+
+    vector<pair<TokenType, string>> expected = {
+        {TokenType::Capture, "$capture"},
+        {TokenType::Identifier, "first_name"},
+        {TokenType::In, "in"},
+        {TokenType::TextType, "text"},
+        {TokenType::Semicolon, ";"},
+        {TokenType::Let, "let"},
+        {TokenType::Identifier, "score"},
+        {TokenType::Assign, "="},
+        {TokenType::NumberLiteral, "72.5"},
+        {TokenType::Semicolon, ";"},
+        {TokenType::Show, "show"},
+        {TokenType::Identifier, "score"},
+        {TokenType::Semicolon, ";"},
+        {TokenType::Let, "let"},
+        {TokenType::Identifier, "greeting"},
+        {TokenType::Assign, "="},
+        {TokenType::TextLiteral, "\"Hi\""},
+        {TokenType::Semicolon, ";"},
+        {TokenType::When, "when"},
+        {TokenType::LeftParen, "("},
+        {TokenType::Identifier, "score"},
+        {TokenType::GreaterEqual, ">="},
+        {TokenType::NumberLiteral, "70"},
+        {TokenType::And, "&&"},
+        {TokenType::True, "true"},
+        {TokenType::RightParen, ")"},
+        {TokenType::LeftBrace, "{"},
+        {TokenType::Show, "show"},
+        {TokenType::Identifier, "greeting"},
+        {TokenType::Semicolon, ";"},
+        {TokenType::RightBrace, "}"},
+        {TokenType::EndOfFile, ""}
+    };
+
+    if (tokens.size() != expected.size()) {
+        cerr << "Test failed: unexpected number of tokens.\n";
+        return 1;
+    }
+
+    for (size_t i = 0; i < expected.size(); ++i) {
+        if (tokens[i].type != expected[i].first || tokens[i].lexeme != expected[i].second) {
+            cerr << "Test failed at token " << i << ".\n";
+            return 1;
+        }
+    }
+    
+    string operatorSource = "+ - * / = == != < <= > >= && || ! ->";
+    Lexer operatorLexer(operatorSource);
+    vector<Token> operatorTokens = operatorLexer.scanTokens();
+
+    vector<pair<TokenType, string>> expectedOperators = {
+        {TokenType::Plus, "+"},
+        {TokenType::Minus, "-"},
+        {TokenType::Multiply, "*"},
+        {TokenType::Divide, "/"},
+        {TokenType::Assign, "="},
+        {TokenType::Equal, "=="},
+        {TokenType::NotEqual, "!="},
+        {TokenType::Less, "<"},
+        {TokenType::LessEqual, "<="},
+        {TokenType::Greater, ">"},
+        {TokenType::GreaterEqual, ">="},
+        {TokenType::And, "&&"},
+        {TokenType::Or, "||"},
+        {TokenType::Not, "!"},
+        {TokenType::Arrow, "->"},
+        {TokenType::EndOfFile, ""}
+    };
+
+    if (operatorTokens.size() != expectedOperators.size()) {
+        cerr << "Test failed: unexpected number of operator tokens.\n";
+        return 1;
+    }
+
+    for (size_t i = 0; i < expectedOperators.size(); ++i) {
+        if (operatorTokens[i].type != expectedOperators[i].first || operatorTokens[i].lexeme != expectedOperators[i].second) {
+            cerr << "Operator test failed at token " << i << ".\n";
+            return 1;
+        }
+    }
+    
+    cout << "Lexer test passed.\n";
+    return 0;
+}
