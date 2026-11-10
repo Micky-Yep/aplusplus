@@ -4,8 +4,19 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <stdexcept>
 
 using namespace std;
+
+bool lexerThrows(const string& source) {
+    try {
+        Lexer lexer(source);
+        lexer.scanTokens();
+    } catch (const runtime_error&) {
+        return true;
+    }
+    return false;
+}
 
 int main() {
     string source ="$capture first_name in text;\n // This comment should be skipped\n let score = 72.5;\n show score; \n let greeting = \"Hi\";\n when (score >=70 && true) {show greeting; }";
@@ -94,6 +105,30 @@ int main() {
             return 1;
         }
     }
+
+    if (!lexerThrows("\"unfinished"))
+    {
+        cerr << "Test failed: unterminated text should cause an error.\n";
+        return 1;
+    }
+    if (!lexerThrows("@"))
+    {
+        cerr << "Test failed: unexpected character should cause an error.\n";
+        return 1;
+    }
+    if (!lexerThrows("&"))
+    {
+        cerr << "Test failed: a single & should cause an error.\n";
+        return 1;
+    }
+    if (!lexerThrows("$captureName"))
+    {
+        cerr << "Test failed: $captureName should not be the $capture keyword.\n";
+        return 1;
+    }
+    
+    
+    
     
     cout << "Lexer test passed.\n";
     return 0;
