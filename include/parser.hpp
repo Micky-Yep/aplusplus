@@ -31,6 +31,7 @@ private:
     StmtPtr loopStatement();
     StmtPtr functionDeclaration();
     StmtPtr returnStatement();
+    StmtPtr classDeclaration();
 
     ExprPtr expression();
     ExprPtr logicalOr();

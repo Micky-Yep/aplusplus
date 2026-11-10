@@ -98,6 +98,11 @@ StmtPtr Parser::declaration() {
     {
         return functionDeclaration();
     }
+    if (match({TokenType::SetClass}))
+    {
+        return classDeclaration();
+    }
+    
     return statement();
     
 }
@@ -285,7 +290,29 @@ ExprPtr Parser::primary() {
     if (match({TokenType::NumberLiteral, TokenType::TextLiteral, TokenType::True, TokenType::False}))
     {
         expr = make_unique<LiteralExpr>(previous());
-    } else if (match({TokenType::Identifier}))
+    } else if (match({TokenType::Spawn}))
+    {
+        Token className = consume(TokenType::Identifier, "Expected a class name after 'spawn'");
+        consume(TokenType::LeftBracket, "Expected '[' after the class name");
+
+        vector<SpawnField> fields;
+
+        if(!check (TokenType::RightBracket))
+        {
+            do
+            {
+                Token fieldName = consume(TokenType::Identifier, "Expected a field name");
+                consume(TokenType::Assign, "Expected '=' after the field name");
+                ExprPtr value = expression();
+                fields.emplace_back(fieldName, std::move(value));
+            } while (match({TokenType::Comma}));
+        }
+        consume(TokenType::RightBracket, "Expected ']' after the field initializers");
+        expr = make_unique<SpawnExpr>(className, std::move(fields));
+    } else if (match({TokenType::Self}))
+    {
+        expr = make_unique<VariableExpr>(previous());
+    }else if (match({TokenType::Identifier}))
     {
         Token name = previous();
         if (match({TokenType::LeftParen}))
@@ -338,7 +365,23 @@ ExprPtr Parser::primary() {
         } else if (match({TokenType::Dot}))
         {
             Token member = consume(TokenType::Identifier, "Expected a member name after '.'");
-            expr = make_unique<MemberExpr>(std::move(expr),member);
+            if (match({TokenType::LeftParen}))
+            {
+                vector<ExprPtr> arguments;
+                if (!check(TokenType::RightParen))
+                {
+                    do
+                    {
+                        arguments.push_back(expression());
+                    } while (match({TokenType::Comma}));
+                    
+                }
+                consume(TokenType::RightParen, "Expected ')' after method arguments");
+                expr = make_unique<MethodCallExpr>(std::move(expr), member, std::move(arguments));
+            } else {
+                expr = make_unique<MemberExpr>(std::move(expr), member);
+            }
+            
         } else {
             break;
         }
@@ -347,7 +390,6 @@ ExprPtr Parser::primary() {
     }
     
     return expr;
-    
     
 }
 
@@ -445,6 +487,41 @@ StmtPtr Parser::functionDeclaration() {
     return make_unique<FunctionDeclStmt>(name, std::move(parameters), returnType, returnsArray, std::move(body));
     
     
+}
+
+StmtPtr Parser::classDeclaration() {
+    Token name = consume(TokenType::Identifier, "Expected a class name after 'setclass");
+    consume(TokenType::Start, "Expected 'start' after the class name");
+
+    vector<ClassMember> members;
+
+    while (!check(TokenType::Colon) && !isAtEnd())
+    {
+        if (!match({TokenType::Public, TokenType::Protected, TokenType::Private}))
+        {
+            error(peek(), "Expected public, protected, or private before a class member");
+        }
+        Token access = previous();
+
+        StmtPtr member;
+        if (match({TokenType::Let}))
+        {
+            member = variableDeclaration(false);
+        } else if (match({TokenType::Const})) {
+            member = variableDeclaration(true);
+        } else if (match({TokenType::Fn}))
+        {
+            member = functionDeclaration();
+        } else {
+            error(peek(), "Expected let, const, or fn after the access modifier");
+        }
+        members.emplace_back(access, std::move(member));
+        
+    }
+    consume(TokenType::Colon, "Expected ':' before 'end'");
+    consume(TokenType::End, "Expected 'end' after the class members");
+    match({TokenType::Semicolon});
+    return make_unique<ClassDeclStmt>(name, std::move(members));
 }
 
 StmtPtr Parser::returnStatement() {

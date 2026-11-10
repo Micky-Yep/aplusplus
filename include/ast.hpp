@@ -150,3 +150,39 @@ struct MemberExpr : Expr {
 
     MemberExpr(ExprPtr target, const Token& memberName) : object(std::move(target)), member(memberName) {}
 };
+
+struct ClassMember {
+    Token access;
+    StmtPtr declaration;
+
+    ClassMember(const Token& visibility, StmtPtr member) : access(visibility), declaration(std::move(member)) {}
+};
+
+struct ClassDeclStmt : Stmt {
+    Token name;
+    vector<ClassMember> members;
+
+    ClassDeclStmt(const Token& className, vector<ClassMember> classMembers) : name(className), members(std::move(classMembers)) {}
+};
+
+struct SpawnField {
+    Token name;
+    ExprPtr value;
+    
+    SpawnField(const Token& fieldName, ExprPtr fieldValue) : name(fieldName), value(std::move(fieldValue)) {}
+};
+
+struct SpawnExpr : Expr {
+    Token className;
+    vector<SpawnField> fields;
+
+    SpawnExpr(const Token& name, vector<SpawnField> initializers) : className(name), fields(std::move(initializers)) {}
+};
+
+struct MethodCallExpr : Expr {
+    ExprPtr object;
+    Token method;
+    vector<ExprPtr> arguments;
+
+    MethodCallExpr(ExprPtr target, const Token& methodName, vector<ExprPtr> args) : object(std::move(target)), method(methodName),arguments(std::move(args)) {}
+}; 
