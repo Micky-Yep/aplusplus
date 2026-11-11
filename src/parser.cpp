@@ -5,7 +5,7 @@
 #include <memory>
 
 using namespace std;
-
+//select the declaration or statement parser based on the next token
 Parser::Parser(vector<Token> tokens) : tokens_(std::move(tokens)) {}
 
 bool Parser::match(initializer_list<TokenType> types) {
@@ -79,6 +79,7 @@ vector<StmtPtr> Parser:: parse() {
     return statements;
 }
 
+//parses the left side first tot distinguish variable assignment, indexed assignment and expression statement
 StmtPtr Parser::declaration() {
     if (match({TokenType::Let}))
     {
@@ -180,6 +181,7 @@ StmtPtr Parser::showStatement() {
     return make_unique<ShowStmt>(std::move(values));
 }
 
+//each method handles one precedence level; lower-precedence method call higher-precedence method 
 StmtPtr Parser::assignmentOrExpressionStatement() {
     //parse the left side first so variable and indexed assignments are both supported
     ExprPtr target = expression();
@@ -219,6 +221,7 @@ ExprPtr Parser::expression() {
     return logicalOr();
 }
 
+//parses chained postfix operation, such as function call, array indexing and member access
 ExprPtr Parser::logicalOr() {
     ExprPtr expr = logicalAnd();
     while (match({TokenType::Or}))
@@ -371,6 +374,7 @@ ExprPtr Parser::primary() {
         error(peek(), "Expected an expression");
     }
 
+    //parses declaration and statement until the matching closing brace 
     while (true)
     {
         if (match({TokenType::LeftBracket}))
@@ -409,6 +413,7 @@ ExprPtr Parser::primary() {
     
 }
 
+//parses a function's signature, parameter, return type and body
 vector<StmtPtr> Parser::block() {
     vector<StmtPtr> statements;
 
