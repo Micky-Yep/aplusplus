@@ -6,13 +6,13 @@ fn add(number: left, number: right) -> number {
     return left + right;
 }
 
-left result = add(3,4);
-nums[0] =50;
+let result = add(3,4);
 let nums = [1,2,3];
-show result, nums[1], nums.length;
+nums[0] =50;
+show result, nums[0], nums.length;
 
 setclass Student start
-    public let aga =20;
+    public let age =20;
     public fn getAge() -> number {
         return self.age;
     }
@@ -20,3 +20,14 @@ setclass Student start
 
 let student = spawn Student [age = 21];
 show student.getAge();
+
+when(score >= 80) {
+    show "HD";
+} default {
+    show "Pass";
+}
+
+let count = 0;
+loop {
+    count = count + 1;
+} until(count >= 2);

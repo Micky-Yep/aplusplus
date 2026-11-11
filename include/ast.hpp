@@ -6,6 +6,7 @@
 #include <utility>
 
 using namespace std;
+//AST node definitions for the language's expressions and statements
 struct Expr {
     virtual ~Expr() = default;
 };
@@ -103,6 +104,7 @@ struct LoopStmt : Stmt {
 struct SkipStmt : Stmt {};
 struct StopStmt : Stmt {};
 
+//describes a function parameter, including whether it is an array
 struct FunctionParameter {
     Token type;
     Token name;
@@ -137,6 +139,7 @@ struct ArrayExpr : Expr {
     explicit ArrayExpr(vector<ExprPtr> values) : elements(std::move(values)){}
 };
 
+//represent reading an array element, such as values[index]
 struct IndexExpr : Expr {
     ExprPtr array;
     ExprPtr index;
@@ -144,6 +147,7 @@ struct IndexExpr : Expr {
     IndexExpr(ExprPtr target, ExprPtr position) : array(std::move(target)), index(std::move(position)) {}
 };
 
+//represent accessing an object or array member, such as self.age or values.length
 struct MemberExpr : Expr {
     ExprPtr object;
     Token member;
@@ -172,6 +176,7 @@ struct SpawnField {
     SpawnField(const Token& fieldName, ExprPtr fieldValue) : name(fieldName), value(std::move(fieldValue)) {}
 };
 
+//represent creating object and assigning initial values to its fields
 struct SpawnExpr : Expr {
     Token className;
     vector<SpawnField> fields;
@@ -179,6 +184,7 @@ struct SpawnExpr : Expr {
     SpawnExpr(const Token& name, vector<SpawnField> initializers) : className(name), fields(std::move(initializers)) {}
 };
 
+//represent calling a method on object
 struct MethodCallExpr : Expr {
     ExprPtr object;
     Token method;

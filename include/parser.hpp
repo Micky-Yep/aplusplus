@@ -10,9 +10,11 @@
 using namespace std;
 
 
+//recursive-descent parser that converts token into an abstract syntax tree
 class Parser {
 public:
     explicit Parser(vector<Token> tokens);
+    //parses the token stream into top-level statements
     vector<StmtPtr> parse();
 
 private:
@@ -20,6 +22,7 @@ private:
     vector<StmtPtr> block();
     size_t current_ = 0;
 
+    //Parses declaration and statement
     StmtPtr declaration();
     StmtPtr variableDeclaration(bool isConst);
     StmtPtr statement();
@@ -33,6 +36,7 @@ private:
     StmtPtr returnStatement();
     StmtPtr classDeclaration();
 
+    //expression parsing methods are ordered from lowest to highest precedence
     ExprPtr expression();
     ExprPtr logicalOr();
     ExprPtr logicalAnd();
@@ -43,6 +47,7 @@ private:
     ExprPtr unary();
     ExprPtr primary();
 
+    //token navigation and validation helpers
     bool match(initializer_list<TokenType> types);
     bool check(TokenType type) const;
     bool checkNext(TokenType type) const;
