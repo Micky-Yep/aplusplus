@@ -21,12 +21,11 @@ bool SemanticChecker::isDeclared(const std::string& name) const {
     return false;
 }
 
-void SemanticChecker::declareVariable(const std::string& name) {
-    // Reject redeclaration and shadowing, following the 2a design.
+void SemanticChecker::declareVariable(const std::string& name, bool isConst) {
     if (isDeclared(name)) {
         throw std::runtime_error("Variable already declared: " + name);
     }
-    scopes_.back().insert(name);
+    scopes_.back().emplace(name, isConst);
 }
 
 void SemanticChecker::requireVariable(const std::string& name) const {
@@ -51,7 +50,7 @@ void SemanticChecker::checkStatement(const Stmt& statement) {
         if (decl->initializer) {
             checkExpression(*decl->initializer);
         }
-        declareVariable(decl->name.lexeme);
+        declareVariable(decl->name.lexeme, decl->isConst);
         return;
     }
 
@@ -61,7 +60,25 @@ void SemanticChecker::checkStatement(const Stmt& statement) {
         }
         return;
     }
+    if (const auto* assign = dynamic_cast<const AssignStmt*>(&statement)) {
+        const auto& name = assign->name.lexeme;
 
+        for (auto scope = scopes_.rbegin(); scope != scopes_.rend(); ++scope) {
+            const auto entry = scope->find(name);
+            if (entry == scope->end()) {
+                continue;
+            }
+
+            if (entry->second) {
+                throw std::runtime_error("Cannot assign to const variable: " + name);
+            }
+
+            checkExpression(*assign->value);
+            return;
+        }
+
+        throw std::runtime_error("Undeclared variable: " + name);
+    }
     throw std::runtime_error("Semantic checker: unsupported statement");
 }
 
