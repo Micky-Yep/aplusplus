@@ -1,0 +1,22 @@
+let score = 72.5;
+const passed = score >= 50 && true;
+show "Score:", score, passed;
+
+fn add(number: left, number: right) -> number {
+    return left + right;
+}
+
+left result = add(3,4);
+nums[0] =50;
+let nums = [1,2,3];
+show result, nums[1], nums.length;
+
+setclass Student start
+    public let aga =20;
+    public fn getAge() -> number {
+        return self.age;
+    }
+:end
+
+let student = spawn Student [age = 21];
+show student.getAge();
