@@ -25,8 +25,9 @@ void SemanticChecker::declareVariable(const std::string& name, bool isConst) {
     if (isDeclared(name)) {
         throw std::runtime_error("Variable already declared: " + name);
     }
-    scopes_.back().emplace(name, isConst);
+    scopes_.back().emplace(name, Symbol{isConst, ValueType::Unknown});
 }
+
 
 void SemanticChecker::requireVariable(const std::string& name) const {
     if (!isDeclared(name)) {
@@ -46,11 +47,12 @@ void SemanticChecker::checkProgram(const std::vector<StmtPtr>& statements) {
 
 void SemanticChecker::checkStatement(const Stmt& statement) {
     if (const auto* decl = dynamic_cast<const VarDeclStmt*>(&statement)) {
-        // Check the right-hand side before registering the new name.
-        if (decl->initializer) {
-            checkExpression(*decl->initializer);
-        }
+        const auto type = decl->initializer
+            ? checkExpression(*decl->initializer)
+            : ValueType::Unknown;
+
         declareVariable(decl->name.lexeme, decl->isConst);
+        scopes_.back().at(decl->name.lexeme).type = type;
         return;
     }
 
@@ -60,6 +62,7 @@ void SemanticChecker::checkStatement(const Stmt& statement) {
         }
         return;
     }
+
     if (const auto* assign = dynamic_cast<const AssignStmt*>(&statement)) {
         const auto& name = assign->name.lexeme;
 
@@ -69,17 +72,21 @@ void SemanticChecker::checkStatement(const Stmt& statement) {
                 continue;
             }
 
-            if (entry->second) {
+            if (entry->second.isConst) {
                 throw std::runtime_error("Cannot assign to const variable: " + name);
             }
 
-            checkExpression(*assign->value);
+            const auto type = checkExpression(*assign->value);
+            if (entry->second.type != ValueType::Unknown &&
+                type != entry->second.type) {
+                throw std::runtime_error("Assignment changes variable type: " + name);
+            }
             return;
         }
 
         throw std::runtime_error("Undeclared variable: " + name);
     }
-    
+
     if (const auto* when = dynamic_cast<const WhenStmt*>(&statement)) {
         auto checkBlock = [this](const std::vector<StmtPtr>& body) {
             enterScope();
@@ -90,7 +97,9 @@ void SemanticChecker::checkStatement(const Stmt& statement) {
         };
 
         for (const auto& branch : when->branches) {
-            checkExpression(*branch.condition);
+            if (checkExpression(*branch.condition) != ValueType::Bool) {
+                throw std::runtime_error("When condition must be Bool");
+            }
             checkBlock(branch.body);
         }
 
@@ -100,25 +109,63 @@ void SemanticChecker::checkStatement(const Stmt& statement) {
     throw std::runtime_error("Semantic checker: unsupported statement");
 }
 
-void SemanticChecker::checkExpression(const Expr& expression) const {
-    if (dynamic_cast<const LiteralExpr*>(&expression)) {
-        return;
+SemanticChecker::ValueType
+SemanticChecker::checkExpression(const Expr& expression) const {
+    if (const auto* literal = dynamic_cast<const LiteralExpr*>(&expression)) {
+        switch (literal->value.type) {
+            case TokenType::NumberLiteral: return ValueType::Number;
+            case TokenType::TextLiteral: return ValueType::Text;
+            case TokenType::True:
+            case TokenType::False: return ValueType::Bool;
+            default: return ValueType::Unknown;
+        }
     }
 
-    if (const auto* variable = dynamic_cast<const VariableExpr*>(&expression)) {
-        requireVariable(variable->name.lexeme);
-        return;
+
+
+     if (const auto* variable = dynamic_cast<const VariableExpr*>(&expression)) {
+        const auto& name = variable->name.lexeme;
+        for (auto scope = scopes_.rbegin(); scope != scopes_.rend(); ++scope) {
+            const auto entry = scope->find(name);
+            if (entry != scope->end()) {
+                return entry->second.type;
+            }
+        }
+        throw std::runtime_error("Undeclared variable: " + name);
     }
 
     if (const auto* unary = dynamic_cast<const UnaryExpr*>(&expression)) {
         checkExpression(*unary->right);
-        return;
+        return unary->op.type == TokenType::Not
+            ? ValueType::Bool
+            : ValueType::Number;
     }
 
     if (const auto* binary = dynamic_cast<const BinaryExpr*>(&expression)) {
-        checkExpression(*binary->left);
-        checkExpression(*binary->right);
-        return;
+        const auto left = checkExpression(*binary->left);
+        const auto right = checkExpression(*binary->right);
+
+        switch (binary->op.type) {
+            case TokenType::Equal:
+            case TokenType::NotEqual:
+            case TokenType::Less:
+            case TokenType::LessEqual:
+            case TokenType::Greater:
+            case TokenType::GreaterEqual:
+            case TokenType::And:
+            case TokenType::Or:
+                return ValueType::Bool;
+            case TokenType::Plus:
+                return left == ValueType::Text || right == ValueType::Text
+                    ? ValueType::Text
+                    : ValueType::Number;
+            case TokenType::Minus:
+            case TokenType::Multiply:
+            case TokenType::Divide:
+                return ValueType::Number;
+            default:
+                return ValueType::Unknown;
+        }
     }
 
     throw std::runtime_error("Semantic checker: unsupported expression");

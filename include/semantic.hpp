@@ -16,8 +16,15 @@ public:
 private:
     bool isDeclared(const std::string& name) const;
     void checkStatement(const Stmt& statement);
-    void checkExpression(const Expr& expression) const;
 
     // Each scope maps a variable name to whether it is constant.
-    std::vector<std::unordered_map<std::string, bool>> scopes_{1};
+    enum class ValueType { Unknown, Number, Text, Bool };
+    ValueType checkExpression(const Expr& expression) const;
+
+    struct Symbol {
+        bool isConst;
+        ValueType type;
+    };
+
+    std::vector<std::unordered_map<std::string, Symbol>> scopes_{1};
 };
