@@ -79,6 +79,24 @@ void SemanticChecker::checkStatement(const Stmt& statement) {
 
         throw std::runtime_error("Undeclared variable: " + name);
     }
+    
+    if (const auto* when = dynamic_cast<const WhenStmt*>(&statement)) {
+        auto checkBlock = [this](const std::vector<StmtPtr>& body) {
+            enterScope();
+            for (const auto& stmt : body) {
+                checkStatement(*stmt);
+            }
+            exitScope();
+        };
+
+        for (const auto& branch : when->branches) {
+            checkExpression(*branch.condition);
+            checkBlock(branch.body);
+        }
+
+        checkBlock(when->defaultBody);
+        return;
+    }
     throw std::runtime_error("Semantic checker: unsupported statement");
 }
 
