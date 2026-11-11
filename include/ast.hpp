@@ -186,3 +186,12 @@ struct MethodCallExpr : Expr {
 
     MethodCallExpr(ExprPtr target, const Token& methodName, vector<ExprPtr> args) : object(std::move(target)), method(methodName),arguments(std::move(args)) {}
 }; 
+
+//represent assigning a value to an array element, e.g. scores[index] = value;
+struct IndexAssignStmt : Stmt {
+    ExprPtr array;
+    ExprPtr index;
+    ExprPtr value;
+
+    IndexAssignStmt(ExprPtr target, ExprPtr position, ExprPtr newValue) : array(std::move(target)), index(std::move(position)), value(std::move(newValue)) {}
+};

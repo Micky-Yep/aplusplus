@@ -116,6 +116,38 @@ int main() {
         return 1;
     }
     
+    string assignmentSource = "let score = 50; score = 55; let scores = [45, 72, 90]; scores[0] = 50;";
+    Lexer assignmentLexer(assignmentSource);
+    Parser assignmentParser(assignmentLexer.scanTokens());
+    vector<StmtPtr> assignmentProgram = assignmentParser.parse();
+    if (assignmentProgram.size() != 4 || dynamic_cast<AssignStmt*>(assignmentProgram[1].get()) == nullptr)
+    {
+        cerr << "Parser test failed: regular assignment was not parsed\n";
+        return 1;
+    }
+    
+    auto* indexAssign = dynamic_cast<IndexAssignStmt*> (assignmentProgram[3].get());
+    if (indexAssign == nullptr)
+    {
+        cerr << "Parser test failed: indexed assignment was not parsed\n";
+        return 1;
+    }
+    
+    auto* arrayName = dynamic_cast<VariableExpr*>(indexAssign->array.get());
+    auto* indexValue = dynamic_cast<LiteralExpr*>(indexAssign->index.get());
+    auto* assignedValue = dynamic_cast<LiteralExpr*>(indexAssign->value.get());
+
+    if (arrayName == nullptr || indexValue == nullptr || assignedValue == nullptr || arrayName->name.lexeme != "scores" || indexValue->value.lexeme != "0" || assignedValue->value.lexeme != "50")
+    {
+        cerr << "Parser test failed: indexed assignment AST is incorrect\n";
+        return 1;
+    }
+    
+    if (!parserThrows("let values = [1]; values[0] = 50"))
+    {
+        cerr << "Parser test failed: indexed assignment without ';' should fail\n";
+        return 1;
+    }
     
     cout << "Parser test passed\n";
     return 0;

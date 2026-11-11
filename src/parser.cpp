@@ -181,16 +181,32 @@ StmtPtr Parser::showStatement() {
 }
 
 StmtPtr Parser::assignmentOrExpressionStatement() {
-    if (check(TokenType::Identifier) && checkNext(TokenType::Assign))
+    //parse the left side first so variable and indexed assignments are both supported
+    ExprPtr target = expression();
+    if (match({TokenType::Assign}))
     {
-        Token name = advance();
-        consume(TokenType ::Assign, "Expected '=' after the variable name");
-        ExprPtr value = expression();
-        consume(TokenType::Semicolon, "Expected ';' after the assignment");
+        if (auto* variable = dynamic_cast<VariableExpr*>(target.get()))
+        {
+            Token name = variable->name;
+            ExprPtr value = expression();
+            consume(TokenType::Semicolon, "Expected ';' after the assignment");
+            return make_unique<AssignStmt>(name, std::move(value));
+        }
 
-        return make_unique<AssignStmt>(name, std::move(value));
+        if (dynamic_cast<IndexExpr*>(target.get()) != nullptr)
+        {
+            unique_ptr<IndexExpr> indexTarget(static_cast<IndexExpr*>(target.release()));
+
+            ExprPtr value = expression();
+            consume(TokenType::Semicolon, "Expected ';' after the assignment");
+            return make_unique<IndexAssignStmt>(std::move(indexTarget->array), std::move(indexTarget->index), std::move(value));
+        }
+        
+        error(previous(), "Invalid assignment target");
     }
-    return expressionStatement();
+    consume(TokenType::Semicolon, "Expected ';' after the expression");
+    return make_unique<ExprStmt>(std::move(target));
+    
 }
 
 StmtPtr Parser::expressionStatement(){
