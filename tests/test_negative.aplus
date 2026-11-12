@@ -1,0 +1,7 @@
+let score = 50;
+let score = 60; 
+
+const max = 100;
+max = 101; 
+
+show undeclared_var;

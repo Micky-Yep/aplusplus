@@ -1,0 +1,4 @@
+// Test whitespace, comments, and operator boundaries
+let    x=10; 
+const y=20; // comment here
+when(x>=10&&y<=20) { show x; }

@@ -1,0 +1,9 @@
+setclass Player start
+    public let health = 100;
+    public fn take_damage() -> number {
+        self.health = self.health - 10;
+        return self.health;
+    }
+:end
+let p1 = spawn Player [health = 100];
+show p1.take_damage();

@@ -1,150 +1,163 @@
 #include "codegen.hpp"
-#include <sstream>      // Used like a text-building workshop to assemble pieces of code together
-#include <stdexcept>    // Used for throwing errors if something goes wrong
+#include <sstream>
+#include <stdexcept>
 
 using namespace std;
 
-// This function translates A++ data types into regular C++ data types.
-// Think of it as translating vocabulary from one language to another.
 string CodeGenerator::mapType(const string& aplusType) const {
-    if (aplusType == "number") return "double";       // A++ 'number' becomes C++ 'double' (decimals/integers)
-    if (aplusType == "text") return "std::string";   // A++ 'text' becomes C++ 'std::string' (sentences/words)
-    if (aplusType == "bool") return "bool";          // A++ 'bool' stays 'bool' (true or false)
-    return "auto";                                   // Fallback type if unknown
+    if (aplusType == "number") return "double";
+    if (aplusType == "text") return "std::string";
+    if (aplusType == "bool") return "bool";
+    return "auto";
 }
 
-// This is the starting point of code generation. It sets up the required C++ libraries
-// and loops through every statement in our program to translate them.
 string CodeGenerator::generate(const vector<StmtPtr>& statements) {
-    stringstream generatedCode; // A string builder to collect our translated C++ code
+    // changed by L - We now split the code into three parts: Headers, Globals, and Main!
+    stringstream includes, globals, mainBody;
+    
+    includes << "#include <iostream>\n";
+    includes << "#include <string>\n";
+    includes << "#include <vector>\n\n";
 
-    // Automatically add standard C++ libraries to the top of our output file
-    generatedCode << "#include <iostream>\n";
-    generatedCode << "#include <string>\n";
-    generatedCode << "#include <vector>\n\n";
+    // changed by L - Open the required C++ int main() block for execution code
+    mainBody << "int main() {\n";
 
-    // Translate every single statement found in the syntax tree
     for (const auto& stmt : statements) {
-        generatedCode << generateStatement(*stmt) << "\n";
+        // changed by L - Functions and Classes must go outside main() in C++
+        if (dynamic_cast<const FunctionDeclStmt*>(stmt.get()) || 
+            dynamic_cast<const ClassDeclStmt*>(stmt.get())) {
+            globals << generateStatement(*stmt) << "\n";
+        } 
+        // changed by L - Normal statements (loops, math, variables) go inside main()
+        else {
+            mainBody << "    " << generateStatement(*stmt) << "\n";
+        }
     }
 
-    // Convert our text builder into a normal string and return it
-    return generatedCode.str();
+    // changed by L - Close the main block
+    mainBody << "    return 0;\n}\n";
+
+    // Combine them all seamlessly!
+    return includes.str() + globals.str() + mainBody.str();
 }
 
-// This function looks at what kind of statement we have (like a variable, a print command, or a loop)
-// and writes the matching C++ code for it.
 string CodeGenerator::generateStatement(const Stmt& statement) {
-    
-    // 1. Handling Variable Declarations (e.g., let score = 72.5;)
     if (const auto* decl = dynamic_cast<const VarDeclStmt*>(&statement)) {
-        string mutability = decl->isConst ? "const " : ""; // If it's a constant, mark it 'const' in C++
+        string mutability = decl->isConst ? "const " : "";
         string init = decl->initializer ? " = " + generateExpression(*decl->initializer) : "";
         return mutability + "auto " + decl->name.lexeme + init + ";";
     }
-
-    // 2. Handling Assignments (e.g., score = 80;)
     if (const auto* assign = dynamic_cast<const AssignStmt*>(&statement)) {
         return assign->name.lexeme + " = " + generateExpression(*assign->value) + ";";
     }
-
-    // 3. Handling Show/Print statements (e.g., show "Score:", score;)
+    if (const auto* indexAssign = dynamic_cast<const IndexAssignStmt*>(&statement)) {
+        return generateExpression(*indexAssign->array) + "[" + generateExpression(*indexAssign->index) + "] = " + generateExpression(*indexAssign->value) + ";";
+    }
     if (const auto* show = dynamic_cast<const ShowStmt*>(&statement)) {
         stringstream ss;
-        ss << "std::cout"; // Standard C++ print command
+        ss << "std::cout";
         for (size_t i = 0; i < show->values.size(); ++i) {
             ss << " << " << generateExpression(*show->values[i]);
-            // If there are multiple items, print a space between them
-            if (i + 1 < show->values.size()) {
-                ss << " << \" \"";
-            }
+            if (i + 1 < show->values.size()) ss << " << \" \"";
         }
-        ss << " << std::endl;"; // End the line with a newline
+        ss << " << std::endl;";
         return ss.str();
     }
-
-    // 4. Handling regular expression statements
     if (const auto* exprStmt = dynamic_cast<const ExprStmt*>(&statement)) {
         return generateExpression(*exprStmt->expression) + ";";
     }
-
-    // 5. Handling Return statements inside functions (e.g., return left + right;)
     if (const auto* ret = dynamic_cast<const ReturnStmt*>(&statement)) {
         return "return " + (ret->value ? generateExpression(*ret->value) : "") + ";";
     }
-
-    // 6. Handling Function Declarations (e.g., fn add(...) -> number { ... })
     if (const auto* func = dynamic_cast<const FunctionDeclStmt*>(&statement)) {
         stringstream ss;
-        // Write the return type and function name
         ss << mapType(func->returnType.lexeme) << " " << func->name.lexeme << "(";
-        
-        // Write out all parameters
         for (size_t i = 0; i < func->parameters.size(); ++i) {
             ss << mapType(func->parameters[i].type.lexeme) << " " << func->parameters[i].name.lexeme;
             if (i + 1 < func->parameters.size()) ss << ", ";
         }
         ss << ") {\n";
-        
-        // Translate every statement inside the function body
         for (const auto& stmt : func->body) {
             ss << "    " << generateStatement(*stmt) << "\n";
         }
         ss << "}\n";
         return ss.str();
     }
-
-    // 7. Handling Loops (e.g., loop { ... } until (condition))
+    if (const auto* classDecl = dynamic_cast<const ClassDeclStmt*>(&statement)) {
+        stringstream ss;
+        ss << "struct " << classDecl->name.lexeme << " {\n";
+        for (const auto& member : classDecl->members) {
+            // changed by L - C++ structs cannot use 'auto' for member types. 
+            // We use decltype() to magically figure out the type from the initializer value!
+            if (const auto* varDecl = dynamic_cast<const VarDeclStmt*>(member.declaration.get())) {
+                string initExpr = generateExpression(*varDecl->initializer);
+                ss << "    decltype(" << initExpr << ") " << varDecl->name.lexeme << " = " << initExpr << ";\n";
+            } else {
+                ss << "    " << generateStatement(*member.declaration) << "\n";
+            }
+        }
+        ss << "};\n";
+        return ss.str();
+    }
+    if (const auto* when = dynamic_cast<const WhenStmt*>(&statement)) {
+        stringstream ss;
+        for (size_t i = 0; i < when->branches.size(); ++i) {
+            if (i > 0) ss << " else ";
+            ss << "if (" << generateExpression(*when->branches[i].condition) << ") {\n";
+            for (const auto& stmt : when->branches[i].body) {
+                ss << "    " << generateStatement(*stmt) << "\n";
+            }
+            ss << "}";
+        }
+        if (!when->defaultBody.empty()) {
+            ss << " else {\n";
+            for (const auto& stmt : when->defaultBody) {
+                ss << "    " << generateStatement(*stmt) << "\n";
+            }
+            ss << "}\n";
+        } else {
+            ss << "\n";
+        }
+        return ss.str();
+    }
     if (const auto* loop = dynamic_cast<const LoopStmt*>(&statement)) {
         stringstream ss;
-        ss << "while (true) {\n"; // Translate 'loop' into an infinite C++ while-loop
+        ss << "while (true) {\n";
         for (const auto& stmt : loop->body) {
             ss << "    " << generateStatement(*stmt) << "\n";
         }
-        // Translate the 'until' condition into a break condition
         ss << "    if (" << generateExpression(*loop->condition) << ") { break; }\n";
         ss << "}\n";
         return ss.str();
     }
-
-    // 8. Handling Skip (continues to next loop iteration)
-    if (dynamic_cast<const SkipStmt*>(&statement)) {
-        return "continue;";
+    if (dynamic_cast<const SkipStmt*>(&statement)) return "continue;";
+    if (dynamic_cast<const StopStmt*>(&statement)) return "break;";
+    
+    if (const auto* capture = dynamic_cast<const CaptureStmt*>(&statement)) {
+        return mapType(capture->type.lexeme) + " " + capture->name.lexeme + ";\n    std::cin >> " + capture->name.lexeme + ";";
     }
-
-    // 9. Handling Stop (breaks out of a loop)
-    if (dynamic_cast<const StopStmt*>(&statement)) {
-        return "break;";
-    }
-
     throw runtime_error("Code generator: unsupported statement type");
 }
 
-// This function translates expressions—the parts of code that calculate values or hold data
 string CodeGenerator::generateExpression(const Expr& expression) {
-    
-    // Literal values (like numbers or text strings)
     if (const auto* lit = dynamic_cast<const LiteralExpr*>(&expression)) {
+        // changed by L - Force text literals to strictly map to std::string for C++ compatbility
+        if (lit->value.type == TokenType::TextLiteral) {
+            return "std::string(" + lit->value.lexeme + ")";
+        }
         return lit->value.lexeme;
     }
-
-    // Variable names (like 'score' or 'total')
     if (const auto* var = dynamic_cast<const VariableExpr*>(&expression)) {
+        if (var->name.lexeme == "self") return "this"; 
         return var->name.lexeme;
     }
-
-    // Unary operations (like negative numbers, e.g., -5)
     if (const auto* unary = dynamic_cast<const UnaryExpr*>(&expression)) {
         return unary->op.lexeme + generateExpression(*unary->right);
     }
-
-    // Binary operations (math and logic, like a + b or x >= 5)
     if (const auto* binary = dynamic_cast<const BinaryExpr*>(&expression)) {
         string op = binary->op.lexeme;
         return "(" + generateExpression(*binary->left) + " " + op + " " + generateExpression(*binary->right) + ")";
     }
-
-    // Function calls (like add(3, 4))
     if (const auto* call = dynamic_cast<const CallExpr*>(&expression)) {
         stringstream ss;
         ss << call->callee.lexeme << "(";
@@ -155,6 +168,49 @@ string CodeGenerator::generateExpression(const Expr& expression) {
         ss << ")";
         return ss.str();
     }
-
+    if (const auto* arrayExpr = dynamic_cast<const ArrayExpr*>(&expression)) {
+        stringstream ss;
+        ss << "std::vector<double>{"; 
+        for (size_t i = 0; i < arrayExpr->elements.size(); ++i) {
+            ss << generateExpression(*arrayExpr->elements[i]);
+            if (i + 1 < arrayExpr->elements.size()) ss << ", ";
+        }
+        ss << "}";
+        return ss.str();
+    }
+    if (const auto* indexExpr = dynamic_cast<const IndexExpr*>(&expression)) {
+        return generateExpression(*indexExpr->array) + "[" + generateExpression(*indexExpr->index) + "]";
+    }
+    if (const auto* spawnExpr = dynamic_cast<const SpawnExpr*>(&expression)) {
+        stringstream ss;
+        ss << spawnExpr->className.lexeme << "{";
+        for (size_t i = 0; i < spawnExpr->fields.size(); ++i) {
+            ss << generateExpression(*spawnExpr->fields[i].value);
+            if (i + 1 < spawnExpr->fields.size()) ss << ", ";
+        }
+        ss << "}";
+        return ss.str();
+    }
+    if (const auto* methodCall = dynamic_cast<const MethodCallExpr*>(&expression)) {
+        stringstream ss;
+        string obj = generateExpression(*methodCall->object);
+        if (obj == "this") obj += "->"; 
+        else obj += ".";
+        ss << obj << methodCall->method.lexeme << "(";
+        for (size_t i = 0; i < methodCall->arguments.size(); ++i) {
+            ss << generateExpression(*methodCall->arguments[i]);
+            if (i + 1 < methodCall->arguments.size()) ss << ", ";
+        }
+        ss << ")";
+        return ss.str();
+    }
+    if (const auto* memberExpr = dynamic_cast<const MemberExpr*>(&expression)) {
+        string obj = generateExpression(*memberExpr->object);
+        string memName = memberExpr->member.lexeme;
+        if (memName == "length") memName = "size()"; 
+        
+        if (obj == "this") return obj + "->" + memName;
+        return obj + "." + memName;
+    }
     throw runtime_error("Code generator: unsupported expression type");
 }

@@ -1,0 +1,5 @@
+fn calculate_speed(number: distance, number: time) -> number {
+    return distance / time;
+}
+let speed = calculate_speed(120, 8);
+show "Speed:", speed;

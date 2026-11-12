@@ -149,16 +149,19 @@ void SemanticChecker::checkStatement(const Stmt& statement) {
         return;
     }
 
-    // changed by L - Added class declaration checking
+    // 9. Class Declarations -debugged
     if (const auto* classDecl = dynamic_cast<const ClassDeclStmt*>(&statement)) {
-        enterScope(); 
+        enterScope(); // Open a box for class members
+        
+        // changed by L - Automatically declare 'self' so methods can use it!
+        declareVariable("self", true); 
+
         for (const auto& member : classDecl->members) {
             checkStatement(*member.declaration);
         }
         exitScope();
         return;
     }
-
     // changed by L - Added expression statement checking
     if (const auto* exprStmt = dynamic_cast<const ExprStmt*>(&statement)) {
         checkExpression(*exprStmt->expression);

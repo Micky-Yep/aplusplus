@@ -1,0 +1,3 @@
+let arr = [10, 20, 30];
+show arr[0]; 
+show arr[2];
