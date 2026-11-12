@@ -51,3 +51,14 @@ Line and column numbers start at 1.
 - Comments start with // and continue to the end of the line.
 - $capture is recognised as a special keyword.
 - The lexer adds an EndOfFile token at the end.
+
+### Errors
+
+Invalid characters, incomplete text and invalid $capture keywords
+cause an error. A single & or | also causes an error.
+
+Error messages include the starting line and column.
+
+Example:
+
+Line 2, column 3: Unexpected character
