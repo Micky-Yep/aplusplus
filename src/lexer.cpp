@@ -66,6 +66,16 @@ void Lexer::error(const string& message) const {
 
 
 vector<Token> Lexer::scanTokens() {
+    
+    // Reset before scanning.
+    tokens_.clear();
+    start_ = 0;
+    current_ = 0;
+    line_ = 1;
+    column_ = 1;
+    startLine_ = 1;
+    startColumn_ = 1;
+
     while (!isAtEnd())  
     {
         skipWhitespaceAndComments();
