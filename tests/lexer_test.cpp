@@ -264,7 +264,7 @@ int main() {
         cerr << "Text test failed: multiline text should cause an error.\n";
         return 1;
     }
-    
+
         // Check invalid capture.
     vector<string> invalidCaptures = {
         "$",
@@ -279,6 +279,27 @@ int main() {
             return 1;
         }
     }
+
+    // Check repeated scanning.
+    Lexer repeatLexer("let value = 1;");
+    vector<Token> firstTokens = repeatLexer.scanTokens();
+    vector<Token> secondTokens = repeatLexer.scanTokens();
+
+    if (firstTokens.size() != secondTokens.size()) {
+        cerr << "Repeat test failed: different token counts.\n";
+        return 1;
+    }
+
+    for (size_t i = 0; i < firstTokens.size(); ++i) {
+        if (firstTokens[i].type != secondTokens[i].type ||
+            firstTokens[i].lexeme != secondTokens[i].lexeme ||
+            firstTokens[i].line != secondTokens[i].line ||
+            firstTokens[i].column != secondTokens[i].column) {
+            cerr << "Repeat test failed at token " << i << ".\n";
+            return 1;
+        }
+    }
+
 
     cout << "Lexer test passed.\n";
     return 0;
