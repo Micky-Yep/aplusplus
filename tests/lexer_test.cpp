@@ -71,6 +71,39 @@ int main() {
         }
     }
     
+    // Check token positions.
+    if (tokens[0].line != 1 || tokens[0].column != 1) {
+        cerr << "Position test failed for $capture.\n";
+        return 1;
+    }
+
+    if (tokens[5].line != 3 || tokens[5].column != 2) {
+        cerr << "Position test failed for let.\n";
+        return 1;
+    }
+
+    if (tokens[8].line != 3 || tokens[8].column != 14) {
+        cerr << "Position test failed for 72.5.\n";
+        return 1;
+    }
+
+    // Check empty input
+    Lexer emptyLexer("");
+    vector<Token> emptyTokens = emptyLexer.scanTokens();
+
+    if (emptyTokens.size() != 1) {
+        cerr << "Empty input test failed: expected one token.\n";
+        return 1;
+    }
+
+    if (emptyTokens[0].type != TokenType::EndOfFile ||
+        !emptyTokens[0].lexeme.empty() ||
+        emptyTokens[0].line != 1 ||
+        emptyTokens[0].column != 1) {
+        cerr << "Empty input test failed: incorrect EOF token.\n";
+        return 1;
+    }
+
     string operatorSource = "+ - * / = == != < <= > >= && || ! ->";
     Lexer operatorLexer(operatorSource);
     vector<Token> operatorTokens = operatorLexer.scanTokens();
