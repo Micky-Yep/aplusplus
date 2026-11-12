@@ -58,6 +58,13 @@ void Lexer::addToken(TokenType type) {
     tokens_.push_back({type, lexeme, startLine_, startColumn_});
 }
 
+void Lexer::error(const string& message) const {
+    throw runtime_error("Line " + to_string(startLine_) +
+                        ", column " + to_string(startColumn_) +
+                        ": " + message);
+}
+
+
 vector<Token> Lexer::scanTokens() {
     while (!isAtEnd())  
     {
@@ -169,7 +176,7 @@ void Lexer::scanToken() {
         {
             addToken(TokenType::And);
         }else {
-            throw runtime_error("Use && for the AND operator");
+            error("Use && for the AND operator");
         }
         break;
     
@@ -178,7 +185,7 @@ void Lexer::scanToken() {
         {
             addToken(TokenType::Or);
         } else {
-            throw runtime_error("Use || for the OR operator");
+            error("Use || for the OR operator");
         }
         break;
     
@@ -197,7 +204,7 @@ void Lexer::scanToken() {
         
         if (!validCapture)
         {
-            throw runtime_error("Expected keyword $capture");
+            error("Expected keyword $capture");
         }
 
         while (current_ < start_ + 8)
@@ -220,7 +227,7 @@ void Lexer::scanToken() {
         } else if ((character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || character == '_') {
             scanIdentifier();
         } else {
-            throw runtime_error("Unexpected character at line " + to_string(startLine_) + ".");
+            error("Unexpected character");
         }
 
     }
@@ -250,7 +257,7 @@ void Lexer::scanText() {
     while(!isAtEnd() && peek() != '"') {
         if (peek() == '\n')
         {
-            throw runtime_error("Text literals cannot span multiple lines");
+            error("Text literals cannot span multiple lines");
         }
 
         advance();
@@ -258,7 +265,7 @@ void Lexer::scanText() {
     }
     if (isAtEnd())
     {
-        throw runtime_error("Unterminated text literal");
+        error("Unterminated text literal");
     }
 
     advance();

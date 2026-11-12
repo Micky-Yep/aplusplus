@@ -160,8 +160,20 @@ int main() {
         return 1;
     }
     
-    
-    
+    // Check error position.
+    try {
+        Lexer invalidLexer("\n  @");
+        invalidLexer.scanTokens();
+        cerr << "Test failed: expected an error.\n";
+        return 1;
+    } catch (const runtime_error& error) {
+        string message = error.what();
+
+        if (message != "Line 2, column 3: Unexpected character") {
+            cerr << "Wrong error message: " << message << "\n";
+            return 1;
+        }
+    }
     
     cout << "Lexer test passed.\n";
     return 0;
