@@ -62,3 +62,13 @@ Error messages include the starting line and column.
 Example:
 
 Line 2, column 3: Unexpected character
+
+### Repeated scanning
+
+Calling scanTokens() resets the lexer before scanning.
+The same lexer can scan its source again, including after an error.
+
+### Scope
+
+Recognising a keyword does not mean its feature is fully implemented.
+The parser and semantic checker handle syntax and meaning.
