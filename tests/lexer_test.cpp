@@ -264,6 +264,21 @@ int main() {
         cerr << "Text test failed: multiline text should cause an error.\n";
         return 1;
     }
+    
+        // Check invalid capture.
+    vector<string> invalidCaptures = {
+        "$",
+        "$captur",
+        "$capture1",
+        "$capture_name"
+    };
+
+    for (const string& source : invalidCaptures) {
+        if (!lexerThrows(source)) {
+            cerr << "Capture test failed for " << source << ".\n";
+            return 1;
+        }
+    }
 
     cout << "Lexer test passed.\n";
     return 0;
