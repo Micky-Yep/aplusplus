@@ -300,6 +300,23 @@ int main() {
         }
     }
 
+    // Check retry after an error.
+    Lexer retryLexer("@");
+
+    for (int attempt = 0; attempt < 2; ++attempt) {
+        try {
+            retryLexer.scanTokens();
+            cerr << "Retry test failed: expected an error.\n";
+            return 1;
+        } catch (const runtime_error& error) {
+            if (string(error.what()) !=
+                "Line 1, column 1: Unexpected character") {
+                cerr << "Retry test failed: wrong error.\n";
+                return 1;
+            }
+        }
+    }
+
 
     cout << "Lexer test passed.\n";
     return 0;
