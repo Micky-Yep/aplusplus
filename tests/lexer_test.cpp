@@ -174,6 +174,37 @@ int main() {
             return 1;
         }
     }
+
+    // Check keywords and names.
+    Lexer nameLexer("let letter const constant true trueValue score Score _name name2");
+    vector<Token> nameTokens = nameLexer.scanTokens();
+
+    vector<pair<TokenType, string>> expectedNames = {
+        {TokenType::Let, "let"},
+        {TokenType::Identifier, "letter"},
+        {TokenType::Const, "const"},
+        {TokenType::Identifier, "constant"},
+        {TokenType::True, "true"},
+        {TokenType::Identifier, "trueValue"},
+        {TokenType::Identifier, "score"},
+        {TokenType::Identifier, "Score"},
+        {TokenType::Identifier, "_name"},
+        {TokenType::Identifier, "name2"},
+        {TokenType::EndOfFile, ""}
+    };
+
+    if (nameTokens.size() != expectedNames.size()) {
+        cerr << "Name test failed: wrong token count.\n";
+        return 1;
+    }
+
+    for (size_t i = 0; i < expectedNames.size(); ++i) {
+        if (nameTokens[i].type != expectedNames[i].first ||
+            nameTokens[i].lexeme != expectedNames[i].second) {
+            cerr << "Name test failed at token " << i << ".\n";
+            return 1;
+        }
+    }
     
     cout << "Lexer test passed.\n";
     return 0;
