@@ -205,6 +205,35 @@ int main() {
             return 1;
         }
     }
+
+    // Check numbers and dots.
+    Lexer numberLexer("0 12 72.5 -3 nums.length");
+    vector<Token> numberTokens = numberLexer.scanTokens();
+
+    vector<pair<TokenType, string>> expectedNumbers = {
+        {TokenType::NumberLiteral, "0"},
+        {TokenType::NumberLiteral, "12"},
+        {TokenType::NumberLiteral, "72.5"},
+        {TokenType::Minus, "-"},
+        {TokenType::NumberLiteral, "3"},
+        {TokenType::Identifier, "nums"},
+        {TokenType::Dot, "."},
+        {TokenType::Identifier, "length"},
+        {TokenType::EndOfFile, ""}
+    };
+
+    if (numberTokens.size() != expectedNumbers.size()) {
+        cerr << "Number test failed: wrong token count.\n";
+        return 1;
+    }
+
+    for (size_t i = 0; i < expectedNumbers.size(); ++i) {
+        if (numberTokens[i].type != expectedNumbers[i].first ||
+            numberTokens[i].lexeme != expectedNumbers[i].second) {
+            cerr << "Number test failed at token " << i << ".\n";
+            return 1;
+        }
+    }
     
     cout << "Lexer test passed.\n";
     return 0;
