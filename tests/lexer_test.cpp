@@ -235,6 +235,30 @@ int main() {
         }
     }
     
+    // Check text and comments.
+    Lexer textLexer("\"\" \"hello world\" \"// text\" // comment");
+    vector<Token> textTokens = textLexer.scanTokens();
+
+    vector<pair<TokenType, string>> expectedText = {
+        {TokenType::TextLiteral, "\"\""},
+        {TokenType::TextLiteral, "\"hello world\""},
+        {TokenType::TextLiteral, "\"// text\""},
+        {TokenType::EndOfFile, ""}
+    };
+
+    if (textTokens.size() != expectedText.size()) {
+        cerr << "Text test failed: wrong token count.\n";
+        return 1;
+    }
+
+    for (size_t i = 0; i < expectedText.size(); ++i) {
+        if (textTokens[i].type != expectedText[i].first ||
+            textTokens[i].lexeme != expectedText[i].second) {
+            cerr << "Text test failed at token " << i << ".\n";
+            return 1;
+        }
+    }
+    
     cout << "Lexer test passed.\n";
     return 0;
 }
