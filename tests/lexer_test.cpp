@@ -258,7 +258,13 @@ int main() {
             return 1;
         }
     }
-    
+
+    // Check multiline text.
+    if (!lexerThrows("\"hello\nworld\"")) {
+        cerr << "Text test failed: multiline text should cause an error.\n";
+        return 1;
+    }
+
     cout << "Lexer test passed.\n";
     return 0;
 }
