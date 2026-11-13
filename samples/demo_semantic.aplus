@@ -1,0 +1,7 @@
+let total = 120 + 1;
+
+when (total > 0) {
+    show total;
+} default {
+    show 0;
+}
