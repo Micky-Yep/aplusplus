@@ -32,4 +32,5 @@ private:
     void scanIdentifier();
     void skipWhitespaceAndComments();
     void addToken(TokenType type);
+    void error(const string& message) const;
 };

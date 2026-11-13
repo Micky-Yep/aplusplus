@@ -1,0 +1,48 @@
+// Numbers and names
+let score = 72.5;
+let bonus_2 = 7.5;
+const pass_mark = 50;
+let _count = 0;
+
+// Names are case-sensitive
+let value = 10;
+let Value = 20;
+let letter = 3;
+
+// Arithmetic and parentheses
+let total = score + bonus_2;
+let difference = total - pass_mark;
+let product = 6 * 4;
+let quotient = 15 / 2;
+let negative = -3;
+let grouped = (2 + 3) * 4;
+
+// Comparisons
+let equal = total == 80;
+let different = score != pass_mark;
+let below = score < pass_mark;
+let at_most = score <= 100;
+let above = score > pass_mark;
+let passed = total >= pass_mark;
+
+// Booleans and logical operators
+let enabled = true;
+let disabled = false;
+let both = passed && enabled;
+let either = disabled || passed;
+let opposite = !passed;
+
+// Text
+let greeting = "Hello A++";
+let empty_text = "";
+let comment_text = "// This is text";
+
+// Output
+show "Total:", total;
+show "Names:", value, Value, letter, _count;
+show "Arithmetic:", difference, product, quotient;
+show "Negative and grouped:", negative, grouped;
+show "Comparisons:", equal, different, below, at_most, above, passed;
+show "Logic:", both, either, opposite;
+show greeting, empty_text, comment_text;
+show "Done"; // This comment is skipped
