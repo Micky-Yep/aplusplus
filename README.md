@@ -1,3 +1,37 @@
+# A++ Compiler
+
+## Project Structure
+
+`include/` contains the declarations for tokens, the lexer, the AST, the parser, semantic checking, and code generation.
+`src/` contains the implementations of the compiler phases and the command-line driver.
+`tests/` contains the lexer, parser, semantic checker, and code generator tests.
+`samples/` contains A++ demo programs and test inputs.
+`build/` contains local build outputs.
+
+## Compiler Pipeline
+
+The command-line driver in `src/main.cpp` runs the compiler in this order:
+
+1. Tokenization and lexical analysis
+2. Syntax analysis and AST construction
+3. Semantic checking
+4. C++ code generation
+
+## Feature-to-File Map
+
+| Feature or phase : Main files |
+Token types and token data :`include/token.hpp` 
+Tokenization and lexical analysis : `include/lexer.hpp`, `src/lexer.cpp` 
+AST node definitions : `include/ast.hpp` 
+Syntax analysis and AST construction : `include/parser.hpp`, `src/parser.cpp` 
+Semantic checking : `include/semantic.hpp`, `src/semantic.cpp` 
+C++ code generation : `include/codegen.hpp`, `src/codegen.cpp` 
+Command-line driver and compiler pipeline : `src/main.cpp` 
+Lexer tests : `tests/lexer_test.cpp` 
+Parser tests : `tests/parser_test.cpp` 
+Semantic checker tests : `tests/semantic_test.cpp` 
+Code generator tests : `tests/codegen_test.cpp` 
+
 ## Parser tests
 
 From the project root, run:
@@ -72,3 +106,11 @@ The same lexer can scan its source again, including after an error.
 
 Recognising a keyword does not mean its feature is fully implemented.
 The parser and semantic checker handle syntax and meaning.
+
+## Build and Run the Compiler
+
+From the project root, build the compiler:
+
+```sh
+mkdir -p build
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Iinclude src/main.cpp src/lexer.cpp src/parser.cpp src/semantic.cpp src/codegen.cpp -o build/aplus
