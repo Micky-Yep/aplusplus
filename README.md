@@ -114,3 +114,47 @@ From the project root, build the compiler:
 ```sh
 mkdir -p build
 g++ -std=c++17 -Wall -Wextra -Wpedantic -Iinclude src/main.cpp src/lexer.cpp src/parser.cpp src/semantic.cpp src/codegen.cpp -o build/aplus
+
+Run the compiler on the integrated demo:
+
+```sh
+./build/aplus samples/demo_parser.aplus
+```
+
+The compiler prints generated C++ code to the terminal. To save, compile, and run that code:
+
+```sh
+./build/aplus samples/demo_parser.aplus > build/generated_demo.cpp
+g++ -std=c++17 -Wall -Wextra -Wpedantic build/generated_demo.cpp -o build/generated_demo
+./build/generated_demo
+```
+
+## Semantic Checker and Code Generator Tests
+
+The lexer and parser test instructions are provided above.
+
+Run the semantic checker test:
+
+```sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Iinclude tests/semantic_test.cpp src/lexer.cpp src/parser.cpp src/semantic.cpp -o build/semantic_test
+./build/semantic_test
+```
+
+Run the code generator test:
+
+```sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Iinclude tests/codegen_test.cpp src/lexer.cpp src/parser.cpp src/semantic.cpp src/codegen.cpp -o build/codegen_test
+./build/codegen_test
+```
+
+## Sample Programs
+
+`samples/demo_lexer.aplus`: demonstrates names, numbers, operators, text, comments, and output.
+`samples/demo_parser.aplus`: demonstrates declarations, expressions, functions, arrays, classes, objects, method calls, branches, and loops.
+`samples/demo_semantic.aplus`: demonstrates a valid conditional program for semantic checking.
+`samples/semantic_when_demo.md`: describes valid and invalid `when` conditions.
+`samples/test_lexer.aplus`: exercises whitespace, comments, and operator boundaries.
+`samples/test_boundary.aplus`: reads the first and last elements of an array.
+`samples/test_positive.aplus`: contains a valid function and calculation example.
+`samples/test_oop.aplus`: demonstrates classes, object creation, and method calls.
+`samples/test_negative.aplus`: contains invalid semantic cases and is expected to be rejected.
